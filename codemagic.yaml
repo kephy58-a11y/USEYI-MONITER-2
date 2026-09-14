@@ -1,0 +1,49 @@
+workflows:
+  android-apk:
+    name: USEYI Monitor - Android APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2 # free-plan minutes are only free on mac_mini_m2
+    environment:
+      flutter: stable
+      vars:
+        PACKAGE_NAME: "com.upshift.useyi_monitor" # update to your real applicationId
+    scripts:
+      - name: Generate android platform folder (not committed to repo)
+        script: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android .
+          fi
+      - name: Add camera permission for mobile_scanner (AndroidManifest.xml)
+        script: |
+          python3 - <<'PY'
+          import re
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path) as f:
+              content = f.read()
+          if "android.permission.CAMERA" not in content:
+              content = re.sub(
+                  r'(<manifest[^>]*>)',
+                  r'\1\n    <uses-permission android:name="android.permission.CAMERA" />\n'
+                  r'    <uses-feature android:name="android.hardware.camera" android:required="false" />',
+                  content,
+                  count=1,
+              )
+              with open(path, "w") as f:
+                  f.write(content)
+              print("Camera permission added.")
+          else:
+              print("Camera permission already present.")
+          PY
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Build Android APK (release)
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true
