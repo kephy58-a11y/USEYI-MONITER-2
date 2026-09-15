@@ -10,6 +10,8 @@ Future<void> main() async {
   await Hive.openBox('students');
   await Hive.openBox('attendance');
   await Hive.openBox('settings');
+  await Hive.openBox('programs');
+  await Hive.openBox('activities');
 
   runApp(const UseyiMonitorApp());
 }
@@ -46,7 +48,6 @@ class UseyiMonitorApp extends StatelessWidget {
           backgroundColor: AppColors.upshiftBlue,
           foregroundColor: Colors.white,
           elevation: 0,
-          centerTitle: false,
         ),
         cardTheme: CardThemeData(
           color: AppColors.surface,
