@@ -1,49 +1,58 @@
+# USEYI Monitor - Android APK build for Codemagic
 workflows:
   android-apk:
     name: USEYI Monitor - Android APK
     max_build_duration: 60
-    instance_type: mac_mini_m2 # free-plan minutes are only free on mac_mini_m2
+    instance_type: mac_mini_m2
     environment:
       flutter: stable
+      java: 17
       vars:
-        PACKAGE_NAME: "com.upshift.useyi_monitor" # update to your real applicationId
+        PACKAGE_NAME: "com.upshift.useyi_monitor"
     scripts:
-      - name: Generate android platform folder (not committed to repo)
+      - name: Create Android platform
         script: |
-          if [ ! -d android ]; then
-            flutter create --platforms=android .
+          set -e
+          if [ ! -d "android" ]; then
+            flutter create --platforms=android --org com.upshift .
           fi
-      - name: Add camera permission for mobile_scanner (AndroidManifest.xml)
+
+      - name: Configure Android camera permission
         script: |
+          set -e
           python3 - <<'PY'
+          from pathlib import Path
           import re
-          path = "android/app/src/main/AndroidManifest.xml"
-          with open(path) as f:
-              content = f.read()
-          if "android.permission.CAMERA" not in content:
-              content = re.sub(
-                  r'(<manifest[^>]*>)',
-                  r'\1\n    <uses-permission android:name="android.permission.CAMERA" />\n'
-                  r'    <uses-feature android:name="android.hardware.camera" android:required="false" />',
-                  content,
-                  count=1,
-              )
-              with open(path, "w") as f:
-                  f.write(content)
-              print("Camera permission added.")
-          else:
-              print("Camera permission already present.")
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+
+          permission = '    <uses-permission android:name="android.permission.CAMERA" />'
+          feature = '    <uses-feature android:name="android.hardware.camera" android:required="false" />'
+
+          if 'android.permission.CAMERA' not in text:
+              match = re.search(r'<manifest\b[^>]*>', text)
+              if not match:
+                  raise SystemExit('AndroidManifest.xml has no <manifest> element')
+              insert = match.group(0) + '\n' + permission + '\n' + feature
+              text = text[:match.start()] + insert + text[match.end():]
+
+          text = text.replace('android:label="useyi_monitor"', 'android:label="USEYI Monitor"')
+          manifest.write_text(text)
           PY
-      - name: Get Flutter packages
+
+      - name: Install packages
         script: flutter pub get
-      - name: Build Android APK (release)
-        script: flutter build apk --release
+
+      - name: Check Dart code
+        script: flutter analyze lib --no-fatal-warnings --no-fatal-infos
+
+      - name: Generate launcher icons
+        script: dart run flutter_launcher_icons
+
+      - name: Build Android release APK
+        script: |
+          flutter build apk --release
+
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
-    publishing:
-      email:
-        recipients:
-          - your-email@example.com
-        notify:
-          success: true
-          failure: true

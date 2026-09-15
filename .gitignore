@@ -5,3 +5,10 @@
 build/
 .idea/
 .vscode/
+android/.gradle/
+android/local.properties
+*.iml
+*.jks
+*.keystore
+key.properties
+.DS_Store
