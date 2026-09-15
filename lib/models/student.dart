@@ -15,6 +15,23 @@ class Student {
     this.active = true,
   });
 
+  Student copyWith({
+    String? id,
+    String? name,
+    String? program,
+    String? cohort,
+    String? phone,
+    bool? active,
+  }) =>
+      Student(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        program: program ?? this.program,
+        cohort: cohort ?? this.cohort,
+        phone: phone ?? this.phone,
+        active: active ?? this.active,
+      );
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'name': name,
@@ -25,11 +42,11 @@ class Student {
       };
 
   factory Student.fromMap(Map map) => Student(
-        id: '${map['id'] ?? ''}',
-        name: '${map['name'] ?? ''}',
-        program: '${map['program'] ?? ''}',
-        cohort: '${map['cohort'] ?? ''}',
-        phone: '${map['phone'] ?? ''}',
+        id: '${map['id'] ?? ''}'.trim(),
+        name: '${map['name'] ?? ''}'.trim(),
+        program: '${map['program'] ?? ''}'.trim(),
+        cohort: '${map['cohort'] ?? ''}'.trim(),
+        phone: '${map['phone'] ?? ''}'.trim(),
         active: map['active'] != false,
       );
 }
