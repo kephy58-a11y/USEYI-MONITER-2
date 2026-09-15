@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:convert';
 
 import '../services/attendance_service.dart';
 import '../theme/app_colors.dart';
@@ -20,7 +21,7 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
     final day = DateFormat('yyyy-MM-dd').format(selected);
     await SharePlus.instance.share(
       ShareParams(
-        text: csv,
+        files: [XFile.fromData(utf8.encode(csv), mimeType: 'text/csv')],
         subject: 'Attendance Sheet – $day',
         fileNameOverrides: ['attendance_sheet_$day.csv'],
       ),

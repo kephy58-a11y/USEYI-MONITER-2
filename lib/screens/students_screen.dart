@@ -28,36 +28,29 @@ class _StudentsScreenState extends State<StudentsScreen> {
   /// Expected columns per row: id,name,program,cohort
   /// A header row (e.g. starting with "id" or "student id") is skipped.
   Future<void> importCsv() async {
-    final result = await FilePicker.platform.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv'],
-      withData: true,
     );
-    if (result == null || result.files.single.bytes == null) return;
+    if (file == null) return;
 
-    final content = utf8.decode(result.files.single.bytes!);
-    final lines = content
-        .split(RegExp(r'\r?\n'))
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
+    final bytes = await file.readAsBytes();
+    final content = utf8.decode(bytes, allowMalformed: true);
+    final rows = _parseCsv(content);
 
     int imported = 0;
     int skipped = 0;
 
-    for (final line in lines) {
-      final parts = line.split(',').map((p) => p.trim()).toList();
+    for (final parts in rows) {
       if (parts.isEmpty) continue;
 
-      final lowerFirst = parts.first.toLowerCase();
-      if (lowerFirst == 'id' || lowerFirst == 'student id') {
-        continue; // header row
-      }
+      final lowerFirst = parts.first.trim().toLowerCase();
+      if (lowerFirst == 'id' || lowerFirst == 'student id') continue;
 
-      final id = parts.isNotEmpty ? parts[0] : '';
-      final name = parts.length > 1 ? parts[1] : '';
-      final program = parts.length > 2 ? parts[2] : '';
-      final cohort = parts.length > 3 ? parts[3] : '';
+      final id = parts.isNotEmpty ? parts[0].trim() : '';
+      final name = parts.length > 1 ? parts[1].trim() : '';
+      final program = parts.length > 2 ? parts[2].trim() : '';
+      final cohort = parts.length > 3 ? parts[3].trim() : '';
 
       if (id.isEmpty || name.isEmpty) {
         skipped++;
@@ -81,6 +74,51 @@ class _StudentsScreenState extends State<StudentsScreen> {
         ),
       );
     }
+  }
+
+
+  List<List<String>> _parseCsv(String input) {
+    final rows = <List<String>>[];
+    final row = <String>[];
+    final field = StringBuffer();
+    var inQuotes = false;
+
+    void finishField() {
+      row.add(field.toString());
+      field.clear();
+    }
+
+    void finishRow() {
+      finishField();
+      if (row.any((value) => value.trim().isNotEmpty)) {
+        rows.add(List<String>.from(row));
+      }
+      row.clear();
+    }
+
+    for (var i = 0; i < input.length; i++) {
+      final char = input[i];
+      if (char == '"') {
+        if (inQuotes && i + 1 < input.length && input[i + 1] == '"') {
+          field.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char == ',' && !inQuotes) {
+        finishField();
+      } else if ((char == '\n' || char == '\r') && !inQuotes) {
+        if (char == '\r' && i + 1 < input.length && input[i + 1] == '\n') {
+          i++;
+        }
+        finishRow();
+      } else {
+        field.write(char);
+      }
+    }
+
+    if (field.isNotEmpty || row.isNotEmpty) finishRow();
+    return rows;
   }
 
   /// Shared dialog for both adding a new student and editing an existing
@@ -110,7 +148,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
               ),
               TextField(
                 controller: program,
-                decoration: const InputDecoration(labelText: 'Program'),
+                decoration: const InputDecoration(labelText: 'Primary program (optional)', helperText: 'Students are registered once and can be used across all programs.'),
               ),
               TextField(
                 controller: cohort,
@@ -255,23 +293,23 @@ class _StudentsScreenState extends State<StudentsScreen> {
                         direction: DismissDirection.startToEnd,
                         onDismissed: (_) async {
                           await AttendanceService.deleteStudent(s.id);
-                          if (mounted) setState(() {});
+                          if (!mounted) return;
+                          setState(() {});
 
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${s.name} deleted'),
-                                duration: const Duration(seconds: 4),
-                                action: SnackBarAction(
-                                  label: 'UNDO',
-                                  onPressed: () async {
-                                    await AttendanceService.saveStudent(s);
-                                    if (mounted) setState(() {});
-                                  },
-                                ),
+                          final messenger = ScaffoldMessenger.of(context);
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('${s.name} deleted'),
+                              duration: const Duration(seconds: 4),
+                              action: SnackBarAction(
+                                label: 'UNDO',
+                                onPressed: () async {
+                                  await AttendanceService.saveStudent(s);
+                                  if (mounted) setState(() {});
+                                },
                               ),
-                            );
-                          }
+                            ),
+                          );
                         },
                         background: Container(
                           alignment: Alignment.centerLeft,
@@ -310,7 +348,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              '${s.id} • ${s.program} • ${s.cohort}',
+                              '${s.id} • ${s.program.isEmpty ? 'All programs' : s.program} • ${s.cohort}',
                             ),
                             trailing: IconButton(
                               tooltip: 'Show QR',

@@ -8,6 +8,10 @@ import 'attendance_sheet_screen.dart';
 import 'lock_screen.dart';
 import 'scanner_screen.dart';
 import 'students_screen.dart';
+import 'programs_screen.dart';
+import 'activities_screen.dart';
+import 'reports_screen.dart';
+import 'app_info_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
       DashboardTab(onRefresh: () => setState(() {})),
       const StudentsScreen(),
       const AttendanceScreen(),
+      const ProgramsScreen(),
+      const ReportsScreen(),
     ];
 
     return Scaffold(
@@ -55,6 +61,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('App Information'),
+                subtitle: const Text('About & share USEYI Monitor'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AppInfoScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.event_note_outlined),
+                title: const Text('Activities & Outcomes'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.summarize_outlined),
+                title: const Text('Reports'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
+                },
               ),
               ListTile(
                 leading: const Icon(
@@ -176,21 +210,11 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIndex: index,
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Students',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Attendance',
-          ),
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
+          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Attendance'),
+          NavigationDestination(icon: Icon(Icons.folder_outlined), selectedIcon: Icon(Icons.folder), label: 'Programs'),
+          NavigationDestination(icon: Icon(Icons.summarize_outlined), selectedIcon: Icon(Icons.summarize), label: 'Reports'),
         ],
       ),
     );

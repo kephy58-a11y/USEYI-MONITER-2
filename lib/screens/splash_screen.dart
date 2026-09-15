@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.qr_code_2, color: Colors.white, size: 56),
+            Image.asset('assets/icon/app_icon.png', height: 100),
             const SizedBox(height: 12),
             Container(
               width: 48,
